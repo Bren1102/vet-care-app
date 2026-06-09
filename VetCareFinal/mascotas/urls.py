@@ -1,6 +1,15 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import MascotaViewSet, VeterinariaViewSet, TurnoViewSet, registrar_usuario, login_usuario, logout_usuario, current_user
+from .views import (
+    MascotaViewSet, 
+    VeterinariaViewSet, 
+    TurnoViewSet, 
+    registrar_usuario, 
+    login_usuario, 
+    logout_usuario, 
+    current_user,
+    modificar_perfil  # 👈 Sumamos nuestra función nueva acá
+)
 
 router = DefaultRouter()
 router.register(r'mascotas', MascotaViewSet)
@@ -13,4 +22,7 @@ urlpatterns = [
     path('login/', login_usuario, name='login_usuario'),
     path('logout/', logout_usuario, name='logout_usuario'),
     path('me/', current_user, name='current_user'),
+    
+    # 🚀 TU APORTE DE HOY: Endpoint para actualizar el perfil del usuario
+    path('perfil/modificar/', modificar_perfil, name='modificar_perfil'),
 ]

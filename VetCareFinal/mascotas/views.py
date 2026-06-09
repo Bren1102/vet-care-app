@@ -149,3 +149,40 @@ def current_user(request):
     }
 
     return Response(data, status=status.HTTP_200_OK)
+
+# --- VISTA PARA MODIFICAR EL PERFIL DE USUARIO (ACTUALIZACIÓN) ---
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def modificar_perfil(request):
+    """Permite al usuario autenticado modificar sus datos personales y su teléfono."""
+    user = request.user
+    data = request.data
+
+    fullname = data.get('fullName')
+    email = data.get('email')
+    telefono = data.get('phone')
+
+    try:
+        # 1. Actualizamos datos en el modelo User base de Django
+        if fullname:
+            user.first_name = fullname
+        
+        if email:
+            # Validamos que el mail nuevo no lo esté usando otra persona
+            if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+                return Response({'message': 'Este correo electrónico ya está en uso por otro usuario.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.email = email
+            user.username = email  # Mantenemos el username sincronizado porque usan el mail
+        user.save()
+
+        # 2. Actualizamos o creamos el teléfono en el Perfil asociado que armó Aldana
+        perfil, created = Perfil.objects.get_or_create(user=user)
+        if telefono is not None:
+            perfil.telefono = telefono
+            perfil.save()
+
+        return Response({'message': 'Perfil actualizado correctamente.'}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'message': f'Error al actualizar el perfil: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
