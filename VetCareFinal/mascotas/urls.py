@@ -8,15 +8,13 @@ from .views import (
     login_usuario, 
     logout_usuario, 
     current_user,
-    modificar_perfil,
-    solicitar_turno  
+    modificar_perfil  # Dejamos solo las vistas activas
 )
 
 router = DefaultRouter()
 router.register(r'mascotas', MascotaViewSet)
 router.register(r'veterinarias', VeterinariaViewSet)
-router.register(r'turnos', TurnoViewSet)
-
+router.register(r'turnos', TurnoViewSet)  
 urlpatterns = [
     path('', include(router.urls)),
     path('register/', registrar_usuario, name='registrar_usuario'),
@@ -26,7 +24,4 @@ urlpatterns = [
     
     # Endpoint para actualizar el perfil del usuario
     path('perfil/modificar/', modificar_perfil, name='modificar_perfil'),
-    
-    #  Ruta segura para la transacción de turnos
-    path('turnos/solicitar/', solicitar_turno, name='solicitar_turno'),
 ]
