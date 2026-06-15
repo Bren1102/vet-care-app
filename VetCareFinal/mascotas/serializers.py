@@ -13,6 +13,18 @@ class VeterinariaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TurnoSerializer(serializers.ModelSerializer):
+    # Sumamos estos campos detallados para que el GET devuelva los objetos completos
+    mascota_detalle = MascotaSerializer(source='mascota', read_only=True)
+    veterinaria_detalle = VeterinariaSerializer(source='veterinaria', read_only=True)
+
     class Meta:
         model = Turno
-        fields = '__all__'
+        fields = [
+            'id', 
+            'mascota', 
+            'veterinaria', 
+            'fecha_hora', 
+            'motivo', 
+            'mascota_detalle', 
+            'veterinaria_detalle'
+        ]

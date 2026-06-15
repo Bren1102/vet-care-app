@@ -8,7 +8,8 @@ from .views import (
     login_usuario, 
     logout_usuario, 
     current_user,
-    modificar_perfil  # 👈 Sumamos nuestra función nueva acá
+    modificar_perfil,
+    solicitar_turno  
 )
 
 router = DefaultRouter()
@@ -23,6 +24,9 @@ urlpatterns = [
     path('logout/', logout_usuario, name='logout_usuario'),
     path('me/', current_user, name='current_user'),
     
-    # 🚀 TU APORTE DE HOY: Endpoint para actualizar el perfil del usuario
+    # Endpoint para actualizar el perfil del usuario
     path('perfil/modificar/', modificar_perfil, name='modificar_perfil'),
+    
+    #  Ruta segura para la transacción de turnos
+    path('turnos/solicitar/', solicitar_turno, name='solicitar_turno'),
 ]

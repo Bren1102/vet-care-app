@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from .models import Mascota, Veterinaria, Turno, Perfil
 from .serializers import MascotaSerializer, VeterinariaSerializer, TurnoSerializer
+from datetime import datetime
 
 class MascotaViewSet(viewsets.ModelViewSet):
     """ViewSet que limita las mascotas al usuario autenticado."""
@@ -186,3 +187,62 @@ def modificar_perfil(request):
 
     except Exception as e:
         return Response({'message': f'Error al actualizar el perfil: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# --- VISTA PARA SOLICITAR UN TURNO NUEVO  ---
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def solicitar_turno(request):
+    """Permite al usuario autenticado registrar un nuevo turno vinculando fecha y hora."""
+    user = request.user
+    data = request.data
+
+    mascota_id = data.get('mascota_id')
+    veterinaria_id = data.get('veterinaria_id')
+    fecha_str = data.get('fecha')  # Esperamos formato 'YYYY-MM-DD'
+    hora_str = data.get('hora')    # Esperamos formato 'HH:MM'
+    motivo = data.get('motivo', '')
+
+    # Validación 
+    if not mascota_id or not veterinaria_id or not fecha_str or not hora_str:
+        return Response({'message': 'Faltan campos obligatorios para agendar el turno.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # 1. Combinamos la fecha y la hora en un formato que acepte el DateTimeField
+        try:
+            fecha_hora_combinada = datetime.strptime(f"{fecha_str} {hora_str}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            return Response({'message': 'Formato de fecha u hora inválido. Use YYYY-MM-DD y HH:MM.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Seguridad: Validamos la mascota y su dueño
+        try:
+            mascota = Mascota.objects.get(pk=mascota_id, dueño=user)
+        except Mascota.DoesNotExist:
+            return Response({'message': 'Mascota no encontrada o no está asociada a tu cuenta.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # 3. Validamos la veterinaria
+        try:
+            veterinaria = Veterinaria.objects.get(pk=veterinaria_id)
+        except Veterinaria.DoesNotExist:
+            return Response({'message': 'La veterinaria seleccionada no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # 4. Controlamos la restricción de que no se pise el turno en la misma veterinaria
+        if Turno.objects.filter(veterinaria=veterinaria, fecha_hora=fecha_hora_combinada).exists():
+            return Response({'message': 'Este horario ya se encuentra reservado en esa veterinaria.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 5. Guardamos en la base de datos
+        nuevo_turno = Turno.objects.create(
+            mascota=mascota,
+            veterinaria=veterinaria,
+            fecha_hora=fecha_hora_combinada,
+            motivo=motivo
+        )
+
+        return Response({
+            'message': 'Turno solicitado con éxito.',
+            'turno_id': nuevo_turno.id
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({'message': f'Error al procesar la solicitud del turno: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
